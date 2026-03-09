@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halo, GUEST</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;600&family=JetBrains+Mono&family=Sora:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sora: ['Sora', 'sans-serif'],
+                        figtree: ['Figtree', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style type="text/tailwindcss">
+        @layer utilities {
+            body {
+                @apply bg-black text-white font-figtree overflow-hidden;
+            }
+            
+            .bookmarks-scroll::-webkit-scrollbar {
+                height: 4px;
+            }
+            .bookmarks-scroll::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .bookmarks-scroll::-webkit-scrollbar-thumb {
+                background: #ffffff;
+                border-radius: 4px;
+                transition: background 0.3s ease-in-out;
+            }
+            .bookmarks-scroll::-webkit-scrollbar-thumb:hover {
+                background: #cccccc;
+            }
+
+            .todo-scroll::-webkit-scrollbar {
+                width: 4px;
+            }
+            .todo-scroll::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .todo-scroll::-webkit-scrollbar-thumb {
+                background: rgba(255,255,255,0.2);
+                border-radius: 4px;
+            }
+            .todo-scroll::-webkit-scrollbar-thumb:hover {
+                background: rgba(255,255,255,0.4);
+            }
+
+            .glass-panel {
+                @apply bg-[rgba(10,10,10,0.85)] backdrop-blur-[10px]; 
+            }
+        }
+    </style>
+</head>
+<body class="relative min-h-screen flex flex-col">
+
+    <!-- Background Media Container -->
+    <div id="bg-container" class="absolute inset-0 z-[-2] w-full h-full overflow-hidden bg-black">
+        <!-- Media will be injected here via JS -->
+    </div>
+    <!-- Dark Overlay for readability -->
+    <div class="absolute inset-0 bg-black/60 z-[-1]"></div>
+
+    <!-- Navigation & Bookmarks -->
+    <nav class="w-full p-6 flex items-center gap-4 glass-panel border-b border-white/5 z-10">
+        <div id="bookmarks-container" class="flex-1 overflow-x-auto bookmarks-scroll flex items-center gap-3 pb-2">
+            <!-- Bookmarks injected here -->
+        </div>
+        <button id="btn-add-bookmark" class="shrink-0 px-4 py-2 rounded-full border border-white/10 hover:border-white transition-colors duration-300 text-[10px] uppercase flex items-center gap-2" style="letter-spacing: 2px;">
+            <i data-lucide="plus" class="w-3 h-3"></i> ADD BOOKMARK
+        </button>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="flex-1 flex flex-col items-center justify-center relative z-0">
+        <div class="text-center space-y-8 flex flex-col items-center w-full">
+            <p id="greeting" class="text-[#888888] text-[14px] font-sora uppercase" style="letter-spacing: 5px; margin-left: 5px;">
+                GOOD MORNING
+            </p>
+            
+            <!-- Editable Name -->
+            <div class="relative w-full flex justify-center">
+                <h1 id="nameDisplay" class="font-sora font-bold text-[60px] md:text-[80px] uppercase cursor-pointer select-none hover:opacity-80 transition-opacity text-center" style="letter-spacing: 1rem; margin-left: 1rem;" title="Klik 2x untuk edit nama">
+                    GUEST
+                </h1>
+                <input id="nameInput" type="text" class="hidden bg-transparent text-center font-sora font-bold text-[60px] md:text-[80px] uppercase outline-none w-full max-w-[90vw] border-b border-white/30 focus:border-white" style="letter-spacing: 1rem; margin-left: 1rem;" placeholder="NAMA KAMU" />
+            </div>
+            
+            <div id="clock" class="font-mono text-[19.2px] opacity-60" style="letter-spacing: 0.5rem; margin-left: 0.5rem;">
+                00:00:00
+            </div>
+
+            <div class="absolute bottom-12 left-1/2 -translate-x-1/2 text-[#888888] text-[10px] uppercase opacity-60" style="letter-spacing: 3px; margin-left: 3px;">
+                [/] UNTUK MENCARI
+            </div>
+        </div>
+    </main>
+
+    <!-- Search Engine Overlay -->
+    <div id="search-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-[10px] z-50 flex items-center justify-center transition-all duration-500 ease-in-out opacity-0 invisible">
+        <div id="search-box" class="w-full max-w-[500px] p-6 transition-transform duration-500 ease-in-out -translate-y-10">
+            <form id="search-form" class="relative">
+                <i data-lucide="search" class="absolute left-6 top-1/2 -translate-y-1/2 text-[#888888] w-5 h-5"></i>
+                <input id="search-input" type="text" name="q" placeholder="Search the web..." class="w-full bg-[rgba(10,10,10,0.95)] border border-white/10 rounded-[30px] py-4 pl-14 pr-6 text-white outline-none focus:border-white/30 transition-colors shadow-[0_10px_30px_rgba(0,0,0,0.5)] text-[14px]" autocomplete="off" />
+            </form>
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="btn-engine-google" class="engine-btn px-6 py-2 rounded-[20px] text-[10px] uppercase transition-all duration-300 border border-white/50 text-white" style="letter-spacing: 2px;">Google</button>
+                <button id="btn-engine-brave" class="engine-btn px-6 py-2 rounded-[20px] text-[10px] uppercase transition-all duration-300 border border-white/10 text-[#888888] hover:border-white/30" style="letter-spacing: 2px;">Brave</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Panel Toggle -->
+    <button id="btn-toggle-task" class="fixed bottom-12 right-12 px-6 py-3 rounded-full border border-white/10 glass-panel hover:border-white transition-colors duration-300 text-[10px] uppercase z-40" style="letter-spacing: 2px;">
+        DAILY TASK
+    </button>
+
+    <!-- Task Panel -->
+    <div id="task-panel" class="fixed top-0 right-0 bottom-0 w-[400px] glass-panel border-l border-white/5 z-40 p-8 flex flex-col transition-all duration-500 ease-in-out translate-x-full opacity-0 invisible">
+        <div class="flex items-center justify-between mb-8">
+            <h2 class="text-[14px] uppercase font-sora" style="letter-spacing: 3px;">Daily Tasks</h2>
+            <button id="btn-close-task" class="text-[#888888] hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div id="todos-container" class="flex-1 overflow-y-auto space-y-2 pr-2 todo-scroll">
+            <!-- Todos injected here -->
+        </div>
+
+        <form id="todo-form" class="mt-6 relative">
+            <input id="todo-input" type="text" placeholder="Add new task..." class="w-full bg-transparent border border-white/10 rounded-lg py-3 px-4 text-[12px] outline-none focus:border-white/30 transition-colors" autocomplete="off" />
+            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-[#888888] hover:text-white transition-colors">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- Add Bookmark Modal -->
+    <div id="bookmark-modal" class="fixed inset-0 bg-black/80 backdrop-blur-[10px] z-50 transition-all duration-500 ease-in-out opacity-0 invisible flex items-center justify-center">
+        <div id="bookmark-box" class="bg-[rgba(10,10,10,0.95)] border border-white/10 rounded-2xl p-8 w-full max-w-[400px] transition-all duration-500 ease-in-out -translate-y-10">
+            <h2 class="text-[14px] uppercase font-sora mb-6" style="letter-spacing: 3px;">Add Bookmark</h2>
+            <form id="bookmark-form" class="space-y-4">
+                <div>
+                    <label class="block text-[#888888] text-[10px] uppercase mb-2" style="letter-spacing: 2px;">Name</label>
+                    <input id="bm-name" type="text" required class="w-full bg-transparent border border-white/10 rounded-lg py-3 px-4 text-[10px] outline-none focus:border-white/30 transition-colors" placeholder="contoh GitHub" autocomplete="off" />
+                </div>
+                <div>
+                    <label class="block text-[#888888] text-[10px] uppercase mb-2" style="letter-spacing: 2px;">URL</label>
+                    <input id="bm-url" type="text" required class="w-full bg-transparent border border-white/10 rounded-lg py-3 px-4 text-[10px] outline-none focus:border-white/30 transition-colors" placeholder="contoh github.com" autocomplete="off" />
+                </div>
+                <div class="flex gap-3 mt-8">
+                    <button type="submit" class="flex-1 py-3 rounded-lg bg-white text-black text-[10px] uppercase hover:bg-white/90 transition-colors font-bold" style="letter-spacing: 2px;">
+                        Simpan
+                    </button>
+                    <button type="button" id="btn-cancel-bm" class="flex-1 py-3 rounded-lg border border-white/10 text-[10px] uppercase hover:bg-white/5 transition-colors" style="letter-spacing: 2px;">
+                        Batal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN SCRIPT -->
+    <script>
+        // ==============================================================================
+        // KONFIGURASI BACKGROUND (FOTO / VIDEO)
+        // ==============================================================================
+        // Ganti nilai di bawah ini dengan nama file foto atau video lokal Anda.
+        // Contoh untuk foto: 'pemandangan.jpg' atau 'assets/foto.png'
+        // Contoh untuk video: 'live-wallpaper.mp4' atau 'assets/video.webm'
+        // Biarkan kosong ('') jika Anda hanya ingin background hitam polos.
+        const BACKGROUND_MEDIA = 'bg-video.webm'; 
+        // ==============================================================================
+
+        // --- STATE MANAGEMENT ---
+        let userName = localStorage.getItem('userName') || 'GUEST';
+        let bookmarks = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+        let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+        let searchEngine = localStorage.getItem('searchEngine') || 'google';
+
+        // --- DOM ELEMENTS ---
+        const nameDisplay = document.getElementById('nameDisplay');
+        const nameInput = document.getElementById('nameInput');
+        const clockEl = document.getElementById('clock');
+        const greetingEl = document.getElementById('greeting');
+        
+        const searchOverlay = document.getElementById('search-overlay');
+        const searchBox = document.getElementById('search-box');
+        const searchInput = document.getElementById('search-input');
+        const searchForm = document.getElementById('search-form');
+        const btnGoogle = document.getElementById('btn-engine-google');
+        const btnBrave = document.getElementById('btn-engine-brave');
+
+        const taskPanel = document.getElementById('task-panel');
+        const btnToggleTask = document.getElementById('btn-toggle-task');
+        const btnCloseTask = document.getElementById('btn-close-task');
+        const todosContainer = document.getElementById('todos-container');
+        const todoForm = document.getElementById('todo-form');
+        const todoInput = document.getElementById('todo-input');
+
+        const bookmarkModal = document.getElementById('bookmark-modal');
+        const bookmarkBox = document.getElementById('bookmark-box');
+        const btnAddBookmark = document.getElementById('btn-add-bookmark');
+        const btnCancelBm = document.getElementById('btn-cancel-bm');
+        const bookmarkForm = document.getElementById('bookmark-form');
+        const bookmarksContainer = document.getElementById('bookmarks-container');
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initBackground();
+            updateNameUI();
+            initClock();
+            renderBookmarks();
+            renderTodos();
+            updateSearchEngineUI();
+            lucide.createIcons();
+        });
+
+        // --- BACKGROUND LOGIC ---
+        function initBackground() {
+            const bgContainer = document.getElementById('bg-container');
+            if (!BACKGROUND_MEDIA) return;
+
+            const ext = BACKGROUND_MEDIA.split('.').pop().toLowerCase();
+            const videoExts = ['mp4', 'webm', 'ogg'];
+            
+            if (videoExts.includes(ext)) {
+                bgContainer.innerHTML = `<video autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover"><source src="${BACKGROUND_MEDIA}" type="video/${ext}"></video>`;
+            } else {
+                bgContainer.innerHTML = `<img src="${BACKGROUND_MEDIA}" class="absolute inset-0 w-full h-full object-cover" alt="background" />`;
+            }
+        }
+
+        // --- NAME EDITING LOGIC ---
+        function updateNameUI() {
+            nameDisplay.textContent = userName;
+            nameInput.value = userName;
+            document.title = `Halo, ${userName}`;
+        }
+
+        nameDisplay.addEventListener('dblclick', () => {
+            nameDisplay.classList.add('hidden');
+            nameInput.classList.remove('hidden');
+            nameInput.focus();
+            // Move cursor to end
+            const val = nameInput.value;
+            nameInput.value = '';
+            nameInput.value = val;
+        });
+
+        function saveName() {
+            const newName = nameInput.value.trim() || 'GUEST';
+            userName = newName;
+            localStorage.setItem('userName', userName);
+            updateNameUI();
+            nameInput.classList.add('hidden');
+            nameDisplay.classList.remove('hidden');
+        }
+
+        nameInput.addEventListener('blur', saveName);
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                nameInput.blur();
+            }
+            if (e.key === 'Escape') {
+                nameInput.value = userName; // revert
+                nameInput.blur();
+            }
+        });
+
+        // --- CLOCK & GREETING ---
+        function initClock() {
+            function update() {
+                const now = new Date();
+                
+                // Update Clock
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                clockEl.textContent = `${hours}:${minutes}:${seconds}`;
+
+                // Update Greeting
+                const h = now.getHours();
+                let greeting = 'GOOD NIGHT';
+                if (h < 12) greeting = 'GOOD MORNING';
+                else if (h < 18) greeting = 'GOOD AFTERNOON';
+                else if (h < 22) greeting = 'GOOD EVENING';
+                greetingEl.textContent = greeting;
+            }
+            update();
+            setInterval(update, 1000);
+        }
+
+        // --- GLOBAL KEYBOARD SHORTCUTS ---
+        document.addEventListener('keydown', (e) => {
+            const isInputActive = document.activeElement.tagName === 'INPUT';
+            
+            // Toggle Search with '/'
+            if (e.key === '/' && !isInputActive) {
+                e.preventDefault();
+                openSearch();
+            }
+
+            // Close overlays with 'Escape'
+            if (e.key === 'Escape') {
+                closeSearch();
+                closeTaskPanel();
+                closeBookmarkModal();
+            }
+        });
+
+        // --- SEARCH ENGINE LOGIC ---
+        function openSearch() {
+            searchOverlay.classList.remove('opacity-0', 'invisible');
+            searchOverlay.classList.add('opacity-100', 'visible');
+            searchBox.classList.remove('-translate-y-10');
+            searchBox.classList.add('translate-y-0');
+            setTimeout(() => searchInput.focus(), 100);
+        }
+
+        function closeSearch() {
+            searchOverlay.classList.remove('opacity-100', 'visible');
+            searchOverlay.classList.add('opacity-0', 'invisible');
+            searchBox.classList.remove('translate-y-0');
+            searchBox.classList.add('-translate-y-10');
+            searchInput.blur();
+        }
+
+        searchOverlay.addEventListener('click', (e) => {
+            if (e.target === searchOverlay) closeSearch();
+        });
+
+        function updateSearchEngineUI() {
+            if (searchEngine === 'google') {
+                btnGoogle.className = "engine-btn px-6 py-2 rounded-[20px] text-[10px] uppercase transition-all duration-300 border border-white/50 text-white";
+                btnBrave.className = "engine-btn px-6 py-2 rounded-[20px] text-[10px] uppercase transition-all duration-300 border border-white/10 text-[#888888] hover:border-white/30";
+            } else {
+                btnBrave.className = "engine-btn px-6 py-2 rounded-[20px] text-[10px] uppercase transition-all duration-300 border border-white/50 text-white";
+                btnGoogle.className = "engine-btn px-6 py-2 rounded-[20px] text-[10px] uppercase transition-all duration-300 border border-white/10 text-[#888888] hover:border-white/30";
+            }
+        }
+
+        btnGoogle.addEventListener('click', () => {
+            searchEngine = 'google';
+            localStorage.setItem('searchEngine', searchEngine);
+            updateSearchEngineUI();
+            searchInput.focus();
+        });
+
+        btnBrave.addEventListener('click', () => {
+            searchEngine = 'brave';
+            localStorage.setItem('searchEngine', searchEngine);
+            updateSearchEngineUI();
+            searchInput.focus();
+        });
+
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            if (!query) return;
+
+            const url = searchEngine === 'google' 
+                ? `https://www.google.com/search?q=${encodeURIComponent(query)}`
+                : `https://search.brave.com/search?q=${encodeURIComponent(query)}`;
+            
+            window.location.href = url;
+        });
+
+        // --- TASK PANEL LOGIC ---
+        function openTaskPanel() {
+            taskPanel.classList.remove('translate-x-full', 'opacity-0', 'invisible');
+            taskPanel.classList.add('translate-x-0', 'opacity-100', 'visible');
+            setTimeout(() => todoInput.focus(), 300);
+        }
+
+        function closeTaskPanel() {
+            taskPanel.classList.remove('translate-x-0', 'opacity-100', 'visible');
+            taskPanel.classList.add('translate-x-full', 'opacity-0', 'invisible');
+        }
+
+        btnToggleTask.addEventListener('click', openTaskPanel);
+        btnCloseTask.addEventListener('click', closeTaskPanel);
+
+        function renderTodos() {
+            if (todos.length === 0) {
+                todosContainer.innerHTML = `<div class="text-[#888888] text-[12px] text-center mt-10">Gada gawean hari ini, sana healing</div>`;
+                return;
+            }
+
+            todosContainer.innerHTML = todos.map(todo => `
+                <div id="todo-${todo.id}" class="group flex items-center gap-4 p-4 rounded-lg border border-white/5 hover:border-white/20 transition-all duration-500 ease-in-out opacity-100 translate-x-0">
+                    <button onclick="removeTodo(${todo.id})" class="text-[#888888] hover:text-white transition-colors shrink-0">
+                        <i data-lucide="circle" class="w-4 h-4"></i>
+                    </button>
+                    <span class="text-[13px] leading-relaxed">${escapeHtml(todo.text)}</span>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        todoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = todoInput.value.trim();
+            if (!text) return;
+
+            todos.push({ id: Date.now(), text });
+            localStorage.setItem('todos', JSON.stringify(todos));
+            todoInput.value = '';
+            renderTodos();
+        });
+
+        window.removeTodo = function(id) {
+            const el = document.getElementById(`todo-${id}`);
+            if (el) {
+                el.classList.remove('opacity-100', 'translate-x-0');
+                el.classList.add('opacity-0', 'translate-x-5');
+                setTimeout(() => {
+                    todos = todos.filter(t => t.id !== id);
+                    localStorage.setItem('todos', JSON.stringify(todos));
+                    renderTodos();
+                }, 500);
+            }
+        };
+
+        // --- BOOKMARKS LOGIC ---
+        function openBookmarkModal() {
+            bookmarkModal.classList.remove('opacity-0', 'invisible');
+            bookmarkModal.classList.add('opacity-100', 'visible');
+            bookmarkBox.classList.remove('-translate-y-10');
+            bookmarkBox.classList.add('translate-y-0');
+            setTimeout(() => document.getElementById('bm-name').focus(), 100);
+        }
+
+        function closeBookmarkModal() {
+            bookmarkModal.classList.remove('opacity-100', 'visible');
+            bookmarkModal.classList.add('opacity-0', 'invisible');
+            bookmarkBox.classList.remove('translate-y-0');
+            bookmarkBox.classList.add('-translate-y-10');
+            bookmarkForm.reset();
+        }
+
+        btnAddBookmark.addEventListener('click', openBookmarkModal);
+        btnCancelBm.addEventListener('click', closeBookmarkModal);
+        bookmarkModal.addEventListener('click', (e) => {
+            if (e.target === bookmarkModal) closeBookmarkModal();
+        });
+
+        function renderBookmarks() {
+            bookmarksContainer.innerHTML = bookmarks.map(bm => `
+                <a href="${bm.url}" class="group relative flex items-center gap-3 px-4 py-2 rounded-full border border-white/10 hover:bg-white hover:text-black transition-all duration-300 ease-in-out whitespace-nowrap text-[10px] uppercase" style="letter-spacing: 2px;">
+                    <span>${escapeHtml(bm.name)}</span>
+                    <button onclick="removeBookmark(event, ${bm.id})" class="opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
+                </a>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        bookmarkForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('bm-name').value.trim();
+            let url = document.getElementById('bm-url').value.trim();
+
+            if (!name || !url) return;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            bookmarks.push({ id: Date.now(), name, url });
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            closeBookmarkModal();
+            renderBookmarks();
+        });
+
+        window.removeBookmark = function(e, id) {
+            e.preventDefault();
+            e.stopPropagation();
+            bookmarks = bookmarks.filter(b => b.id !== id);
+            localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+            renderBookmarks();
+        };
+
+        // --- UTILS ---
+        function escapeHtml(unsafe) {
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
